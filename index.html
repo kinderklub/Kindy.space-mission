@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Space Mission: Misi Angkasa (Kindy Klub Edition)</title>
+  <!-- Google Font Quicksand -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    /* CSS Reset & Variables */
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      margin: 0;
+      padding: 0;
+      font-family: 'Quicksand', sans-serif;
+    }
+
+    :root {
+      --space-start: #1B1B3A;
+      --space-end: #2D1B4E;
+      --bubblegum-pink: #FF4785;
+      --bubblegum-shadow: #C92056;
+      --electric-cyan: #00E5FF;
+      --cyan-shadow: #009BB0;
+      --sunburst-yellow: #FFD000;
+      --yellow-shadow: #C79A00;
+      --lime-green: #70E000;
+      --lime-shadow: #4A9900;
+      --pure-white: #FFFFFF;
+      --navy-dark: #12102B;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 30%, #301d5c 0%, #15122f 100%);
+      color: var(--pure-white);
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Screen UI Container */
+    #ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .interactive {
+      pointer-events: auto;
+    }
+
+    .btn-3d {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      border-radius: 999px;
+      cursor: pointer;
+      outline: none;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .btn-3d:active {
+      transform: translateY(6px) !important;
+    }
+
+    .btn-pink {
+      background: linear-gradient(180deg, #FF6EA7 0%, var(--bubblegum-pink) 100%);
+      color: white;
+      box-shadow: 0 10px 0 var(--bubblegum-shadow), 0 16px 20px rgba(0, 0, 0, 0.35);
+    }
+    .btn-pink:active {
+      box-shadow: 0 4px 0 var(--bubblegum-shadow), 0 8px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-cyan {
+      background: linear-gradient(180deg, #44F0FF 0%, var(--electric-cyan) 100%);
+      color: #043640;
+      box-shadow: 0 10px 0 var(--cyan-shadow), 0 16px 20px rgba(0, 0, 0, 0.35);
+    }
+    .btn-cyan:active {
+      box-shadow: 0 4px 0 var(--cyan-shadow), 0 8px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-yellow {
+      background: linear-gradient(180deg, #FFE047 0%, var(--sunburst-yellow) 100%);
+      color: #4A3500;
+      box-shadow: 0 10px 0 var(--yellow-shadow), 0 16px 20px rgba(0, 0, 0, 0.35);
+    }
+    .btn-yellow:active {
+      box-shadow: 0 4px 0 var(--yellow-shadow), 0 8px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-green {
+      background: linear-gradient(180deg, #91F524 0%, var(--lime-green) 100%);
+      color: #173800;
+      box-shadow: 0 10px 0 var(--lime-shadow), 0 16px 20px rgba(0, 0, 0, 0.35);
+    }
+    .btn-green:active {
+      box-shadow: 0 4px 0 var(--lime-shadow), 0 8px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Small Pill Switcher */
+    .btn-pill-small {
+      padding: 8px 18px;
+      font-size: 15px;
+      border-radius: 999px;
+      border: 3px solid #FFFFFF;
+    }
+
+    .clay-card {
+      background: rgba(35, 26, 68, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 6px solid #FFFFFF;
+      border-radius: 40px;
+      box-shadow: 0 24px 48px rgba(10, 5, 30, 0.6), inset 0 3px 6px rgba(255, 255, 255, 0.3);
+      padding: 24px;
+      text-align: center;
+    }
+
+    /* Glossy badge element */
+    .glossy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 14px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    /* Screens: Front Screen, Game HUD, Victory Screen */
+    .screen-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      padding: 16px;
+    }
+
+    .hidden {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: scale(0.92) !important;
+    }
+
+    .hidden * {
+      pointer-events: none !important;
+    }
+
+    #landing-screen {
+      justify-content: space-between;
+      padding: 24px 16px 20px;
+      overflow-y: auto;
+    }
+
+    .top-bar {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .game-logo-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    .logo-hero-svg {
+      width: 110px;
+      height: 110px;
+      filter: drop-shadow(0 10px 18px rgba(0, 229, 255, 0.45));
+      animation: floatHero 3.5s ease-in-out infinite;
+    }
+
+    @keyframes floatHero {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-14px) rotate(3deg); }
+    }
+
+    .game-title {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      text-align: center;
+      background: linear-gradient(180deg, #FFFFFF 20%, #FFE047 60%, #FF9900 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+      line-height: 1.15;
+      margin-top: 6px;
+    }
+
+    .game-subtitle {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--electric-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 2px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    .tier-group {
+      display: flex;
+      gap: 14px;
+      margin: 12px 0;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .tier-card {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 3px solid rgba(255, 255, 255, 0.35);
+      border-radius: 24px;
+      padding: 14px 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      outline: none;
+      color: inherit;
+      -webkit-appearance: none;
+      touch-action: manipulation;
+      pointer-events: auto;
+      position: relative;
+    }
+
+    .tier-card:active {
+      transform: scale(0.97);
+    }
+
+    .tier-card.selected {
+      background: rgba(0, 229, 255, 0.25);
+      border: 4px solid var(--electric-cyan);
+      box-shadow: 0 0 24px rgba(0, 229, 255, 0.5), inset 0 2px 6px rgba(255, 255, 255, 0.4);
+      transform: scale(1.05);
+    }
+
+    .tier-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #FFFFFF;
+      pointer-events: none;
+    }
+
+    .tier-desc {
+      font-size: 12px;
+      font-weight: 700;
+      color: #D2D0FF;
+      margin-top: 4px;
+      pointer-events: none;
+    }
+
+    /* How to Play Card */
+    .how-to-card {
+      max-width: 480px;
+      width: 100%;
+      padding: 14px 20px;
+      background: rgba(20, 15, 45, 0.7);
+      border: 3px dashed rgba(255, 255, 255, 0.4);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .how-to-text {
+      text-align: left;
+      font-size: 13px;
+      font-weight: 700;
+      color: #E6E4FF;
+      line-height: 1.35;
+    }
+
+    #game-hud {
+      justify-content: space-between;
+      pointer-events: none;
+      padding: 16px;
+    }
+
+    /* Group top HUD elements together so question banner stays cleanly at the top */
+    .hud-top-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .hud-header {
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .hud-pill {
+      background: rgba(22, 17, 48, 0.85);
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .question-banner {
+      width: 100%;
+      max-width: 580px;
+      margin: 10px auto 0;
+      background: linear-gradient(180deg, #FFE873 0%, var(--sunburst-yellow) 100%);
+      color: #382400;
+      border: 4px solid #FFFFFF;
+      border-radius: 999px;
+      padding: 10px 24px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.2px;
+      box-shadow: 0 8px 0 var(--yellow-shadow), 0 16px 20px rgba(0, 0, 0, 0.45);
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: auto;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.7) translateY(-20px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    /* Steering Touch Controls */
+    .controls-row {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 10px 20px;
+      pointer-events: auto;
+    }
+
+    .steer-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid #FFFFFF;
+      cursor: pointer;
+      outline: none;
+      touch-action: manipulation;
+    }
+
+    #victory-modal {
+      z-index: 100;
+      background: rgba(14, 10, 32, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .stars-row {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    .star-pop {
+      width: 64px;
+      height: 64px;
+      animation: starBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes starBounce {
+      0% { transform: scale(0) rotate(-45deg); }
+      70% { transform: scale(1.25) rotate(15deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .footer-brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: 0.5px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* Soft boing animation for wrong gate */
+    .wobble-anim {
+      animation: wobble 0.55s ease-in-out;
+    }
+
+    @keyframes wobble {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-18px) rotate(-6deg); }
+      40% { transform: translateX(18px) rotate(6deg); }
+      60% { transform: translateX(-10px) rotate(-3deg); }
+      80% { transform: translateX(10px) rotate(3deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Three.js Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <div id="ui-layer">
+
+    <!-- FRONT SCREEN / LANDING SCREEN -->
+    <div id="landing-screen" class="screen-container interactive">
+      <!-- Top Bar: High Score & Bilingual Switch -->
+      <div class="top-bar">
+        <div class="glossy-badge" id="high-score-badge">
+          <!-- Custom Chibi Trophy SVG (NO EMOJI) -->
+          <svg width="22" height="22" viewBox="0 0 32 32">
+            <defs>
+              <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#FFE769"/>
+                <stop offset="100%" stop-color="#FF9D00"/>
+              </linearGradient>
+            </defs>
+            <path d="M7 6h18v10a9 9 0 01-18 0V6z" fill="url(#goldGrad)" stroke="#FFFFFF" stroke-width="2"/>
+            <path d="M7 9H3a3 3 0 000 6h4M25 9h4a3 3 0 010 6h-4" fill="none" stroke="#FFE769" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M12 24h8v3h-8zM14 16v8M18 16v8" stroke="#FFFFFF" stroke-width="2"/>
+            <circle cx="12" cy="10" r="1.5" fill="#FFFFFF" opacity="0.7"/>
+          </svg>
+          <span id="txt-high-score-label">Rekod: 0</span>
+        </div>
+
+        <!-- Bilingual Switcher Button -->
+        <button id="lang-toggle-btn" class="btn-3d btn-cyan btn-pill-small interactive" onclick="toggleLanguage()">
+          <!-- Custom Vector World Globe SVG -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" fill="#00E5FF" stroke="#FFFFFF" stroke-width="2"/>
+            <path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20" stroke="#009BB0" stroke-width="1.8"/>
+            <circle cx="8" cy="7" r="1.5" fill="#FFFFFF" opacity="0.6"/>
+          </svg>
+          <span id="lang-label">BM | EN</span>
+        </button>
+      </div>
+
+      <div class="game-logo-wrapper">
+        <!-- Chibi 3D Vector Rocket Icon with glossy sheen -->
+        <svg class="logo-hero-svg" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="rocketBody" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#FFFFFF"/>
+              <stop offset="45%" stop-color="#E0F7FA"/>
+              <stop offset="100%" stop-color="#00E5FF"/>
+            </linearGradient>
+            <linearGradient id="rocketWing" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FF6EA7"/>
+              <stop offset="100%" stop-color="#C92056"/>
+            </linearGradient>
+            <linearGradient id="thrustFire" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFD000"/>
+              <stop offset="100%" stop-color="#FF4785"/>
+            </linearGradient>
+          </defs>
+          <!-- Wings -->
+          <path d="M22 62 C15 72, 16 82, 28 80 L35 68 Z" fill="url(#rocketWing)"/>
+          <path d="M78 62 C85 72, 84 82, 72 80 L65 68 Z" fill="url(#rocketWing)"/>
+          <!-- Thruster Flame -->
+          <path d="M42 82 Q50 99 58 82 Z" fill="url(#thrustFire)"/>
+          <!-- Chubby Body -->
+          <ellipse cx="50" cy="52" rx="24" ry="34" fill="url(#rocketBody)" stroke="#FFFFFF" stroke-width="3"/>
+          <!-- Nosecone -->
+          <path d="M30 35 C32 15, 68 15, 70 35 Z" fill="url(#rocketWing)"/>
+          <!-- Round Porthole Window -->
+          <circle cx="50" cy="48" r="10" fill="#1B1B3A" stroke="#FFFFFF" stroke-width="3"/>
+          <circle cx="50" cy="48" r="7" fill="#00E5FF"/>
+          <circle cx="47" cy="45" r="2.5" fill="#FFFFFF" opacity="0.8"/>
+          <!-- Body Glossy Highlight Dot -->
+          <ellipse cx="40" cy="38" rx="4" ry="8" transform="rotate(-20 40 38)" fill="#FFFFFF" opacity="0.6"/>
+        </svg>
+
+        <h1 class="game-title" id="txt-title">MISI ANGKASA</h1>
+        <div class="game-subtitle">KINDY KLUB EDITION</div>
+      </div>
+
+      <div class="tier-group">
+        <button type="button" class="tier-card selected" id="tier-1-btn" onclick="selectTier(1)">
+          <div class="tier-title" id="txt-t1-title">Tahap 1 (3-4 Thn)</div>
+          <div class="tier-desc" id="txt-t1-desc">Kenal Nombor & Kiraan (1 - 10)</div>
+        </button>
+        <button type="button" class="tier-card" id="tier-2-btn" onclick="selectTier(2)">
+          <div class="tier-title" id="txt-t2-title">Tahap 2 (5-6 Thn)</div>
+          <div class="tier-desc" id="txt-t2-desc">Operasi Tambah (1 - 20)</div>
+        </button>
+      </div>
+
+      <!-- How to play visual card -->
+      <div class="how-to-card">
+        <!-- Steering Guide SVG -->
+        <svg width="44" height="44" viewBox="0 0 50 50">
+          <circle cx="25" cy="25" r="23" fill="#FF4785" stroke="#FFFFFF" stroke-width="2.5"/>
+          <path d="M15 25 L23 18 L23 22 L35 22 L35 28 L23 28 L23 32 Z" fill="#FFFFFF"/>
+          <circle cx="20" cy="15" r="3" fill="#FFFFFF" opacity="0.6"/>
+        </svg>
+        <div class="how-to-text" id="txt-how-to">
+          Pandu roket comel ke pintu gerbang planet yang betul! Gunakan butang kiri dan kanan.
+        </div>
+      </div>
+
+      <!-- BIG 3D Start Button -->
+      <button class="btn-3d btn-green interactive" style="padding: 16px 54px; font-size: 24px;" onclick="startGame()">
+        <!-- Star Icon SVG -->
+        <svg width="26" height="26" viewBox="0 0 24 24">
+          <polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9" fill="#FFFFFF"/>
+          <circle cx="12" cy="10" r="2" fill="#FFE047"/>
+        </svg>
+        <span id="txt-start-btn">MULA TERBANG</span>
+      </button>
+
+      <!-- Copyright Footer -->
+      <div class="footer-brand">
+        Made by Kinder Klub | © All Rights Reserved
+      </div>
+    </div>
+
+    <div id="game-hud" class="screen-container hidden">
+      <!-- HUD Top Group to prevent banner from floating to middle -->
+      <div class="hud-top-group">
+        <!-- HUD Header -->
+        <div class="hud-header">
+          <div class="hud-pill">
+            <!-- Star Icon SVG -->
+            <svg width="22" height="22" viewBox="0 0 24 24">
+              <polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9" fill="#FFD000" stroke="#FFFFFF" stroke-width="1.5"/>
+              <circle cx="12" cy="9" r="2" fill="#FFFFFF" opacity="0.6"/>
+            </svg>
+            <span id="hud-score">0</span>
+          </div>
+
+          <div class="hud-pill">
+            <!-- Gate icon SVG -->
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 20V8a8 8 0 0116 0v12" stroke="#00E5FF" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="12" cy="8" r="2" fill="#FFFFFF"/>
+            </svg>
+            <span id="hud-round">1 / 5</span>
+          </div>
+
+          <button class="btn-3d btn-pink btn-pill-small interactive" onclick="quitToMenu()">
+            <span id="txt-quit-btn">KELUAR</span>
+          </button>
+        </div>
+
+        <!-- Question Banner Pill -->
+        <div class="question-banner" id="question-banner-box">
+          <span id="question-text">Pintu 5</span>
+        </div>
+      </div>
+
+      <!-- Bottom Touch Steering Controls -->
+      <div class="controls-row">
+        <button class="btn-3d btn-cyan steer-btn interactive" id="btn-steer-left" onclick="steerRocket(-1)">
+          <!-- Arrow Left SVG -->
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+            <path d="M15 19l-7-7 7-7" stroke="#043640" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <button class="btn-3d btn-cyan steer-btn interactive" id="btn-steer-right" onclick="steerRocket(1)">
+          <!-- Arrow Right SVG -->
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+            <path d="M9 5l7 7-7 7" stroke="#043640" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="victory-modal" class="screen-container hidden">
+      <div class="clay-card interactive" style="max-width: 440px; width: 90%;">
+        <!-- Trophy Celebration SVG -->
+        <svg width="90" height="90" viewBox="0 0 100 100" style="margin-bottom: 8px;">
+          <defs>
+            <linearGradient id="vicCup" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFF385"/>
+              <stop offset="100%" stop-color="#FF9900"/>
+            </linearGradient>
+          </defs>
+          <path d="M25 22h50v30c0 14-11 25-25 25S25 66 25 52V22z" fill="url(#vicCup)" stroke="#FFFFFF" stroke-width="4"/>
+          <path d="M25 32H12c-4 0-7 4-7 8s3 8 7 8h13M75 32h13c4 0 7 4 7 8s-3 8-7 8H75" fill="none" stroke="#FFE047" stroke-width="5" stroke-linecap="round"/>
+          <path d="M42 77h16v12h-16zM34 89h32v5H34z" fill="#FF9900" stroke="#FFFFFF" stroke-width="3"/>
+          <circle cx="40" cy="35" r="4" fill="#FFFFFF" opacity="0.7"/>
+        </svg>
+
+        <h2 class="game-title" style="font-size: 30px;" id="txt-vic-title">TAHNIAH ANGKASAWAN!</h2>
+        <p style="color: #E2E0FF; font-weight: 700; margin: 6px 0 14px;" id="txt-vic-subtitle">Misi Anda Berjaya!</p>
+
+        <!-- 3 Stars Row (Custom Chibi SVGs, No Emojis) -->
+        <div class="stars-row">
+          <svg class="star-pop" viewBox="0 0 50 50">
+            <polygon points="25,4 31,19 47,19 34,29 39,44 25,35 11,44 16,29 3,19 19,19" fill="#FFD000" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="25" cy="20" r="3.5" fill="#FFFFFF" opacity="0.6"/>
+          </svg>
+          <svg class="star-pop" style="animation-delay: 0.15s;" viewBox="0 0 50 50">
+            <polygon points="25,4 31,19 47,19 34,29 39,44 25,35 11,44 16,29 3,19 19,19" fill="#FFD000" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="25" cy="20" r="3.5" fill="#FFFFFF" opacity="0.6"/>
+          </svg>
+          <svg class="star-pop" style="animation-delay: 0.3s;" viewBox="0 0 50 50">
+            <polygon points="25,4 31,19 47,19 34,29 39,44 25,35 11,44 16,29 3,19 19,19" fill="#FFD000" stroke="#FFFFFF" stroke-width="2.5"/>
+            <circle cx="25" cy="20" r="3.5" fill="#FFFFFF" opacity="0.6"/>
+          </svg>
+        </div>
+
+        <div class="hud-pill" style="justify-content: center; margin: 12px auto; width: fit-content; font-size: 20px;">
+          <span id="txt-final-score">Mata: 500</span>
+        </div>
+
+        <button class="btn-3d btn-green interactive" style="padding: 14px 44px; font-size: 20px; margin-top: 14px;" onclick="restartGame()">
+          <span id="txt-play-again-btn">MAIN LAGI</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Child-friendly pure Web Audio API synthesizer
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Happy Gate Passing Chime (Ascending arpeggio)
+    function playChimeSound() {
+      try {
+        initAudio();
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.08);
+
+          gain.gain.setValueAtTime(0.001, audioCtx.currentTime + idx * 0.08);
+          gain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + idx * 0.08 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + idx * 0.08 + 0.35);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + idx * 0.08);
+          osc.stop(audioCtx.currentTime + idx * 0.08 + 0.4);
+        });
+      } catch (e) {
+        console.warn('Audio not allowed yet', e);
+      }
+    }
+
+    // Gentle bouncy boing sound for soft wrong gate feedback
+    function playBoingSound() {
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(260, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.3);
+
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.32);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Victory celebration fanfare
+    function playFanfareSound() {
+      try {
+        initAudio();
+        const chords = [
+          { f: 523.25, t: 0.00 }, // C5
+          { f: 659.25, t: 0.12 }, // E5
+          { f: 783.99, t: 0.24 }, // G5
+          { f: 1046.5, t: 0.38 }  // C6 hold
+        ];
+        chords.forEach((note) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(note.f, audioCtx.currentTime + note.t);
+
+          gain.gain.setValueAtTime(0.001, audioCtx.currentTime + note.t);
+          gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + note.t + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + note.t + 0.6);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + note.t);
+          osc.stop(audioCtx.currentTime + note.t + 0.65);
+        });
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Crisp tactile button click
+    function playClickSound() {
+      try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.07);
+
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch(e) {}
+    }
+
+    // Localization System (BM & EN)
+    const translations = {
+      BM: {
+        title: "MISI ANGKASA",
+        highScore: "Rekod: ",
+        t1Title: "Tahap 1 (3-4 Thn)",
+        t1Desc: "Kenal Nombor & Bintang (1 - 10)",
+        t2Title: "Tahap 2 (5-6 Thn)",
+        t2Desc: "Operasi Tambah (1 - 20)",
+        howTo: "Pandu roket comel ke pintu gerbang planet yang betul! Gunakan butang kiri dan kanan.",
+        startBtn: "MULA TERBANG",
+        quitBtn: "KELUAR",
+        vicTitle: "TAHNIAH ANGKASAWAN!",
+        vicSub: "Misi Angkasa Anda Berjaya!",
+        finalScore: "Mata Terkumpul: ",
+        playAgain: "MAIN LAGI",
+        flyToGate: "Terbang ke Pintu ",
+        solveQuestion: "Selesaikan: "
+      },
+      EN: {
+        title: "SPACE MISSION",
+        highScore: "Best: ",
+        t1Title: "Tier 1 (3-4 Yrs)",
+        t1Desc: "Number ID & Counting (1 - 10)",
+        t2Title: "Tier 2 (5-6 Yrs)",
+        t2Desc: "Simple Addition (1 - 20)",
+        howTo: "Steer your toy rocket into the correct planetary gate! Tap left and right buttons to steer.",
+        startBtn: "LAUNCH ROCKET",
+        quitBtn: "EXIT",
+        vicTitle: "GREAT JOB ASTRONAUT!",
+        vicSub: "Space Mission Complete!",
+        finalScore: "Total Score: ",
+        playAgain: "PLAY AGAIN",
+        flyToGate: "Fly to Gate ",
+        solveQuestion: "Solve: "
+      }
+    };
+
+    let currentLang = 'BM';
+    let currentTier = 1;
+    let score = 0;
+    let currentRound = 1;
+    const totalRounds = 5;
+    let highScore = parseInt(localStorage.getItem('kindy_space_highscore') || '0', 10);
+
+    function updateUITexts() {
+      const t = translations[currentLang];
+      document.getElementById('txt-title').innerText = t.title;
+      document.getElementById('txt-high-score-label').innerText = t.highScore + highScore;
+      document.getElementById('txt-t1-title').innerText = t.t1Title;
+      document.getElementById('txt-t1-desc').innerText = t.t1Desc;
+      document.getElementById('txt-t2-title').innerText = t.t2Title;
+      document.getElementById('txt-t2-desc').innerText = t.t2Desc;
+      document.getElementById('txt-how-to').innerText = t.howTo;
+      document.getElementById('txt-start-btn').innerText = t.startBtn;
+      document.getElementById('txt-quit-btn').innerText = t.quitBtn;
+      document.getElementById('txt-vic-title').innerText = t.vicTitle;
+      document.getElementById('txt-vic-subtitle').innerText = t.vicSub;
+      document.getElementById('txt-play-again-btn').innerText = t.playAgain;
+      document.getElementById('lang-label').innerText = currentLang === 'BM' ? 'BM | EN' : 'EN | BM';
+    }
+
+    function toggleLanguage() {
+      playClickSound();
+      currentLang = currentLang === 'BM' ? 'EN' : 'BM';
+      updateUITexts();
+      if (gameState === 'PLAYING') {
+        updateQuestionPrompt();
+      }
+    }
+
+    function selectTier(tier) {
+      playClickSound();
+      currentTier = tier;
+      const t1 = document.getElementById('tier-1-btn');
+      const t2 = document.getElementById('tier-2-btn');
+      if (t1 && t2) {
+        if (tier === 1) {
+          t1.classList.add('selected');
+          t2.classList.remove('selected');
+        } else {
+          t2.classList.add('selected');
+          t1.classList.remove('selected');
+        }
+      }
+    }
+
+    let scene, camera, renderer;
+    let rocketGroup, thrusterLight, thrusterFlame;
+    let starParticles;
+    let planetsList = [];
+    let gatesGroup = null;
+    let currentQuestionData = null;
+    let gameState = 'MENU'; // 'MENU', 'PLAYING', 'VICTORY'
+
+    // Lanes config: 3 lanes at X = -3.2, 0, 3.2
+    const lanesX = [-3.2, 0, 3.2];
+    let currentLaneIndex = 1; // Middle lane
+    let targetRocketX = 0;
+    let gateSpeed = 0.36;
+    let warpSpeedActive = false;
+
+    function initThree() {
+      const container = document.getElementById('canvas-container');
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x1B1B3A, 0.012);
+
+      camera = new THREE.PerspectiveCamera(52, width / height, 0.1, 1000);
+      camera.position.set(0, 3.6, 7.8);
+      camera.lookAt(0, 1.2, -4);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      container.appendChild(renderer.domElement);
+
+      // Lighting: Warm playful diorama aesthetic
+      const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.95);
+      scene.add(ambientLight);
+
+      const mainSun = new THREE.DirectionalLight(0xFFEDBA, 1.3);
+      mainSun.position.set(12, 20, 10);
+      scene.add(mainSun);
+
+      const rimLight = new THREE.DirectionalLight(0x00E5FF, 0.85);
+      rimLight.position.set(-15, -5, -15);
+      scene.add(rimLight);
+
+      createStarfield();
+      createPastelDioramaPlanets();
+      createChubbyRocket();
+
+      window.addEventListener('resize', onWindowResize, false);
+      setupSwipeGestures();
+    }
+
+    function createStarfield() {
+      const starGeo = new THREE.BufferGeometry();
+      const starCount = 450;
+      const positions = new Float32Array(starCount * 3);
+      const colors = new Float32Array(starCount * 3);
+
+      const colorPalette = [
+        new THREE.Color(0x00E5FF),
+        new THREE.Color(0xFF4785),
+        new THREE.Color(0xFFD000),
+        new THREE.Color(0xFFFFFF),
+        new THREE.Color(0xA594F9)
+      ];
+
+      for (let i = 0; i < starCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 130;
+        positions[i + 1] = (Math.random() - 0.5) * 90;
+        positions[i + 2] = -Math.random() * 120;
+
+        const c = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+        colors[i] = c.r;
+        colors[i + 1] = c.g;
+        colors[i + 2] = c.b;
+      }
+
+      starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      starGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const starMat = new THREE.PointsMaterial({
+        size: 0.65,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.85
+      });
+
+      starParticles = new THREE.Points(starGeo, starMat);
+      scene.add(starParticles);
+    }
+
+    function createPastelDioramaPlanets() {
+      const planetConfigs = [
+        { color: 0xFFA07A, size: 4.8, x: -18, y: 7, z: -45, ring: true, ringColor: 0xFFE082 },
+        { color: 0x81D4FA, size: 6.2, x: 22, y: -4, z: -60, ring: false },
+        { color: 0xCE93D8, size: 3.6, x: -14, y: -8, z: -35, ring: true, ringColor: 0xFF80AB },
+        { color: 0xA7FFEB, size: 5.0, x: 16, y: 12, z: -50, ring: false }
+      ];
+
+      planetConfigs.forEach((cfg) => {
+        const group = new THREE.Group();
+        group.position.set(cfg.x, cfg.y, cfg.z);
+
+        const sphereMat = new THREE.MeshStandardMaterial({
+          color: cfg.color,
+          roughness: 0.45,
+          metalness: 0.05
+        });
+        const sphereGeo = new THREE.SphereGeometry(cfg.size, 32, 32);
+        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+        group.add(sphere);
+
+        if (cfg.ring) {
+          const ringGeo = new THREE.RingGeometry(cfg.size * 1.35, cfg.size * 1.85, 32);
+          const ringMat = new THREE.MeshStandardMaterial({
+            color: cfg.ringColor,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.75,
+            roughness: 0.5
+          });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = Math.PI / 2.3;
+          ring.rotation.y = 0.25;
+          group.add(ring);
+        }
+
+        scene.add(group);
+        planetsList.push(group);
+      });
+    }
+
+    function createChubbyRocket() {
+      rocketGroup = new THREE.Group();
+
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: 0xFAFAFA,
+        roughness: 0.2,
+        metalness: 0.1
+      });
+
+      const pinkMat = new THREE.MeshStandardMaterial({
+        color: 0xFF4785,
+        roughness: 0.3,
+        metalness: 0.1
+      });
+
+      const cyanMat = new THREE.MeshStandardMaterial({
+        color: 0x00E5FF,
+        roughness: 0.2,
+        metalness: 0.2
+      });
+
+      // Fuselage: Smooth rounded capsule shape
+      const bodyGeo = new THREE.SphereGeometry(0.82, 32, 28);
+      bodyGeo.scale(1, 1.8, 1);
+      const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+      bodyMesh.rotation.x = -Math.PI / 2;
+      rocketGroup.add(bodyMesh);
+
+      // Nosecone: Chubby Bubblegum pink cap
+      const noseGeo = new THREE.ConeGeometry(0.78, 1.1, 32);
+      const noseMesh = new THREE.Mesh(noseGeo, pinkMat);
+      noseMesh.position.set(0, 0, -1.35);
+      noseMesh.rotation.x = -Math.PI / 2;
+      rocketGroup.add(noseMesh);
+
+      // Porthole Window: Outer rim and cyan glass
+      const rimGeo = new THREE.TorusGeometry(0.36, 0.08, 16, 32);
+      const rimMesh = new THREE.Mesh(rimGeo, pinkMat);
+      rimMesh.position.set(0, 0.7, -0.2);
+      rimMesh.rotation.x = Math.PI / 3.2;
+      rocketGroup.add(rimMesh);
+
+      const glassGeo = new THREE.CircleGeometry(0.34, 32);
+      const glassMesh = new THREE.Mesh(glassGeo, cyanMat);
+      glassMesh.position.set(0, 0.7, -0.2);
+      glassMesh.rotation.x = Math.PI / 3.2;
+      rocketGroup.add(glassMesh);
+
+      // Rounded Fins (Left, Right, Top)
+      const finShape = new THREE.Shape();
+      finShape.moveTo(0, 0);
+      finShape.quadraticCurveTo(0.6, 0.8, 1.1, 0.2);
+      finShape.lineTo(0.7, -0.4);
+      finShape.closePath();
+
+      const extrudeSettings = { depth: 0.12, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.04, bevelThickness: 0.04 };
+      const finGeo = new THREE.ExtrudeGeometry(finShape, extrudeSettings);
+
+      const leftFin = new THREE.Mesh(finGeo, pinkMat);
+      leftFin.position.set(-0.6, -0.1, 0.6);
+      leftFin.rotation.set(0, -Math.PI / 2.2, 0.2);
+      rocketGroup.add(leftFin);
+
+      const rightFin = new THREE.Mesh(finGeo, pinkMat);
+      rightFin.position.set(0.6, -0.1, 0.6);
+      rightFin.rotation.set(0, Math.PI / 2.2, -0.2);
+      rightFin.scale.x = -1;
+      rocketGroup.add(rightFin);
+
+      // Thruster Nozzle & Flame
+      const nozzleGeo = new THREE.CylinderGeometry(0.42, 0.54, 0.45, 24);
+      const nozzleMesh = new THREE.Mesh(nozzleGeo, cyanMat);
+      nozzleMesh.position.set(0, 0, 1.3);
+      nozzleMesh.rotation.x = -Math.PI / 2;
+      rocketGroup.add(nozzleMesh);
+
+      // Dynamic Flame Cone
+      const flameGeo = new THREE.ConeGeometry(0.38, 1.0, 20);
+      const flameMat = new THREE.MeshBasicMaterial({ color: 0xFFD000, transparent: true, opacity: 0.9 });
+      thrusterFlame = new THREE.Mesh(flameGeo, flameMat);
+      thrusterFlame.position.set(0, 0, 1.9);
+      thrusterFlame.rotation.x = Math.PI / 2;
+      rocketGroup.add(thrusterFlame);
+
+      // Thruster Glow PointLight
+      thrusterLight = new THREE.PointLight(0xFF8800, 2.0, 8);
+      thrusterLight.position.set(0, 0, 2.1);
+      rocketGroup.add(thrusterLight);
+
+      rocketGroup.position.set(0, 0.4, 0);
+      scene.add(rocketGroup);
+    }
+
+    // High-resolution procedural badges with high-contrast, pop-out stars & numbers
+    function createBadgeTexture(text, isStarCount = false, starNum = 1) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      if (isStarCount) {
+        // Deep vibrant midnight-purple badge background so golden stars POP vividly
+        const radGrad = ctx.createRadialGradient(256, 230, 40, 256, 256, 240);
+        radGrad.addColorStop(0, '#361D66');
+        radGrad.addColorStop(0.65, '#221244');
+        radGrad.addColorStop(1, '#150A2E');
+
+        ctx.fillStyle = radGrad;
+        ctx.beginPath();
+        ctx.arc(256, 256, 232, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Chunky glossy neon-cyan & white outer border
+        ctx.lineWidth = 22;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.stroke();
+
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = '#00E5FF';
+        ctx.beginPath();
+        ctx.arc(256, 256, 218, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner glowing ambient halo
+        const haloGrad = ctx.createRadialGradient(256, 256, 50, 256, 256, 210);
+        haloGrad.addColorStop(0, 'rgba(255, 220, 0, 0.28)');
+        haloGrad.addColorStop(1, 'rgba(255, 220, 0, 0)');
+        ctx.fillStyle = haloGrad;
+        ctx.beginPath();
+        ctx.arc(256, 256, 215, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw super-sized, high-contrast pop-out stars
+        drawChibiStars(ctx, starNum);
+      } else {
+        // Playful Candy Pink Disc for Number mode
+        const radGrad = ctx.createRadialGradient(256, 220, 30, 256, 256, 240);
+        radGrad.addColorStop(0, '#FFFFFF');
+        radGrad.addColorStop(0.4, '#FFE6F2');
+        radGrad.addColorStop(1, '#FF4785');
+
+        ctx.fillStyle = radGrad;
+        ctx.beginPath();
+        ctx.arc(256, 256, 232, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bold white border
+        ctx.lineWidth = 22;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.stroke();
+
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = '#C92056';
+        ctx.beginPath();
+        ctx.arc(256, 256, 220, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Large, Chunky, Playful Number
+        ctx.fillStyle = '#1A103C';
+        ctx.font = '900 210px "Quicksand", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 256, 274);
+      }
+
+      // Top-left glossy highlight reflection
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(180, 130, 75, 34, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.generateMipmaps = true;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    // Draw vibrant, high-contrast, chunky Chibi stars visible from far away
+    function drawChibiStars(ctx, count) {
+      const positions = [];
+      if (count === 1) {
+        // Huge single center star
+        positions.push([256, 256, 120]);
+      } else if (count === 2) {
+        // Two big twin stars
+        positions.push([170, 256, 75], [342, 256, 75]);
+      } else if (count === 3) {
+        positions.push([256, 175, 68], [175, 320, 68], [337, 320, 68]);
+      } else if (count === 4) {
+        positions.push([175, 175, 62], [337, 175, 62], [175, 337, 62], [337, 337, 62]);
+      } else if (count === 5) {
+        positions.push(
+          [256, 155, 52],
+          [160, 225, 52],
+          [352, 225, 52],
+          [195, 345, 52],
+          [317, 345, 52]
+        );
+      } else {
+        // 6 - 8 stars nicely ringed and centered
+        const rRing = count > 6 ? 122 : 110;
+        const starR = count > 6 ? 42 : 46;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+          positions.push([256 + Math.cos(angle) * rRing, 256 + Math.sin(angle) * rRing, starR]);
+        }
+      }
+
+      positions.forEach(([x, y, r]) => {
+        drawSingleStar(ctx, x, y, 5, r, r * 0.48);
+      });
+    }
+
+    function drawSingleStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+      let rot = Math.PI / 2 * 3;
+      let x = cx;
+      let y = cy;
+      const step = Math.PI / spikes;
+
+      // Outer golden glow behind each star
+      const glowGrad = ctx.createRadialGradient(cx, cy, innerRadius * 0.5, cx, cy, outerRadius * 1.55);
+      glowGrad.addColorStop(0, 'rgba(255, 230, 0, 0.85)');
+      glowGrad.addColorStop(1, 'rgba(255, 150, 0, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerRadius * 1.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Build Star Path
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerRadius);
+      ctx.closePath();
+
+      // Pop-out rich gold/amber 3D gradient fill
+      const starGrad = ctx.createLinearGradient(cx, cy - outerRadius, cx, cy + outerRadius);
+      starGrad.addColorStop(0, '#FFFFFF');
+      starGrad.addColorStop(0.2, '#FFF145');
+      starGrad.addColorStop(0.8, '#FF9E00');
+      starGrad.addColorStop(1, '#FF6A00');
+
+      ctx.fillStyle = starGrad;
+      ctx.fill();
+
+      // Strong white stroke first for bright pop
+      ctx.lineWidth = Math.max(5, outerRadius * 0.16);
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Deep dark contrast outline to make it super sharp from a distance
+      ctx.lineWidth = Math.max(3, outerRadius * 0.09);
+      ctx.strokeStyle = '#4A1B00';
+      ctx.stroke();
+
+      // Cute glossy highlight sparkle
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(cx - outerRadius * 0.22, cy - outerRadius * 0.22, outerRadius * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function spawnGateRound() {
+      if (gatesGroup) {
+        scene.remove(gatesGroup);
+      }
+      gatesGroup = new THREE.Group();
+
+      // Generate question and 3 candidate answers
+      currentQuestionData = generateQuestion(currentTier);
+
+      // Top question HUD update
+      updateQuestionPrompt();
+
+      // Palette of vibrant, glowing candy colors for gate rings
+      const ringPalette = [
+        0xFF4785, // Bubblegum Pink
+        0x00E5FF, // Electric Cyan
+        0x9B51E0, // Vivid Purple
+        0xFF8400, // Vibrant Orange
+        0x00F076, // Neon Emerald Green
+        0xFFD000  // Sunburst Yellow
+      ];
+
+      // Shuffle color palette so every gate gets a unique random color with NO answer hint
+      const shuffledColors = [...ringPalette].sort(() => Math.random() - 0.5);
+
+      // Create 3 gates at x = -3.2, 0, 3.2
+      lanesX.forEach((laneX, idx) => {
+        const singleGateGroup = new THREE.Group();
+        singleGateGroup.position.set(laneX, 1.2, -65);
+
+        // Randomized gate ring color independent of correctness
+        const gateColor = shuffledColors[idx % shuffledColors.length];
+
+        // Rounded glowing gate arch (Torus)
+        const gateRingGeo = new THREE.TorusGeometry(1.7, 0.24, 24, 42);
+        const isCorrectGate = (idx === currentQuestionData.correctLane);
+
+        const gateMat = new THREE.MeshStandardMaterial({
+          color: gateColor,
+          roughness: 0.3,
+          metalness: 0.2,
+          emissive: gateColor,
+          emissiveIntensity: 0.42
+        });
+        const gateMesh = new THREE.Mesh(gateRingGeo, gateMat);
+        singleGateGroup.add(gateMesh);
+
+        // Center Candidate Badge Billboard (Enlarged to 2.2 for maximum readability)
+        const opt = currentQuestionData.options[idx];
+        const badgeTex = createBadgeTexture(opt.label, opt.isStarCount, opt.starCount);
+        const badgeGeo = new THREE.PlaneGeometry(2.2, 2.2);
+        const badgeMat = new THREE.MeshBasicMaterial({
+          map: badgeTex,
+          transparent: true,
+          side: THREE.DoubleSide
+        });
+        const badgeMesh = new THREE.Mesh(badgeGeo, badgeMat);
+        badgeMesh.position.set(0, 0, 0.05);
+        singleGateGroup.add(badgeMesh);
+
+        singleGateGroup.userData = {
+          laneIndex: idx,
+          isCorrect: isCorrectGate
+        };
+
+        gatesGroup.add(singleGateGroup);
+      });
+
+      scene.add(gatesGroup);
+    }
+
+    function generateQuestion(tier) {
+      let promptText = "";
+      let correctVal = 0;
+      let options = [];
+      const correctLane = Math.floor(Math.random() * 3);
+
+      if (tier === 1) {
+        // Tier 1: 3-4 yrs (1 to 10 identification or star count)
+        const mode = Math.random() > 0.5 ? 'number' : 'count';
+        correctVal = Math.floor(Math.random() * 8) + 1; // 1 to 8
+
+        const wrongVals = [];
+        while (wrongVals.length < 2) {
+          const r = Math.floor(Math.random() * 8) + 1;
+          if (r !== correctVal && !wrongVals.includes(r)) wrongVals.push(r);
+        }
+
+        let optIdx = 0;
+        for (let i = 0; i < 3; i++) {
+          const val = (i === correctLane) ? correctVal : wrongVals[optIdx++];
+          options.push({
+            value: val,
+            label: mode === 'number' ? val.toString() : "",
+            isStarCount: mode === 'count',
+            starCount: val
+          });
+        }
+
+        promptText = mode === 'number' ? `${correctVal}` : `${correctVal}`;
+        return { tier: 1, mode, correctVal, promptText, correctLane, options };
+      } else {
+        // Tier 2: 5-6 yrs (Simple addition up to 20)
+        const a = Math.floor(Math.random() * 8) + 1;
+        const b = Math.floor(Math.random() * 7) + 1;
+        correctVal = a + b;
+
+        const wrongVals = [];
+        while (wrongVals.length < 2) {
+          const offset = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 3) + 1);
+          const candidate = Math.max(1, correctVal + offset);
+          if (candidate !== correctVal && !wrongVals.includes(candidate)) {
+            wrongVals.push(candidate);
+          }
+        }
+
+        let optIdx = 0;
+        for (let i = 0; i < 3; i++) {
+          const val = (i === correctLane) ? correctVal : wrongVals[optIdx++];
+          options.push({
+            value: val,
+            label: val.toString(),
+            isStarCount: false,
+            starCount: 0
+          });
+        }
+
+        promptText = `${a} + ${b} = ?`;
+        return { tier: 2, mode: 'math', correctVal, promptText, correctLane, options };
+      }
+    }
+
+    function updateQuestionPrompt() {
+      if (!currentQuestionData) return;
+      const t = translations[currentLang];
+      const qBox = document.getElementById('question-text');
+
+      if (currentQuestionData.tier === 1) {
+        if (currentQuestionData.mode === 'count') {
+          qBox.innerText = (currentLang === 'BM' ? "Kira " : "Count ") + currentQuestionData.correctVal + (currentLang === 'BM' ? " Bintang!" : " Stars!");
+        } else {
+          qBox.innerText = t.flyToGate + currentQuestionData.correctVal;
+        }
+      } else {
+        qBox.innerText = t.solveQuestion + currentQuestionData.promptText;
+      }
+    }
+
+    function steerRocket(direction) {
+      if (gameState !== 'PLAYING') return;
+      playClickSound();
+
+      currentLaneIndex = Math.max(0, Math.min(2, currentLaneIndex + direction));
+      targetRocketX = lanesX[currentLaneIndex];
+    }
+
+    // Touch swipe handling for mobile
+    let touchStartX = 0;
+    function setupSwipeGestures() {
+      window.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      window.addEventListener('touchend', (e) => {
+        if (gameState !== 'PLAYING') return;
+        const touchEndX = e.changedTouches[0].screenX;
+        const diffX = touchEndX - touchStartX;
+        if (Math.abs(diffX) > 40) {
+          if (diffX > 0) steerRocket(1);
+          else steerRocket(-1);
+        }
+      }, { passive: true });
+
+      // Keyboard arrow keys
+      window.addEventListener('keydown', (e) => {
+        if (gameState !== 'PLAYING') return;
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') steerRocket(-1);
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') steerRocket(1);
+      });
+    }
+
+    function startGame() {
+      playClickSound();
+      initAudio();
+      gameState = 'PLAYING';
+      score = 0;
+      currentRound = 1;
+      currentLaneIndex = 1;
+      targetRocketX = 0;
+      rocketGroup.position.x = 0;
+
+      document.getElementById('hud-score').innerText = score;
+      document.getElementById('hud-round').innerText = `${currentRound} / ${totalRounds}`;
+
+      document.getElementById('landing-screen').classList.add('hidden');
+      document.getElementById('victory-modal').classList.add('hidden');
+      document.getElementById('game-hud').classList.remove('hidden');
+
+      spawnGateRound();
+    }
+
+    function quitToMenu() {
+      playClickSound();
+      gameState = 'MENU';
+      document.getElementById('game-hud').classList.add('hidden');
+      document.getElementById('victory-modal').classList.add('hidden');
+      document.getElementById('landing-screen').classList.remove('hidden');
+
+      if (gatesGroup) {
+        scene.remove(gatesGroup);
+        gatesGroup = null;
+      }
+    }
+
+    function restartGame() {
+      playClickSound();
+      startGame();
+    }
+
+    function onGateEvaluated(isCorrect) {
+      if (isCorrect) {
+        playChimeSound();
+        score += 100;
+        document.getElementById('hud-score').innerText = score;
+        warpSpeedActive = true;
+
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem('kindy_space_highscore', highScore);
+          document.getElementById('txt-high-score-label').innerText = translations[currentLang].highScore + highScore;
+        }
+
+        setTimeout(() => {
+          warpSpeedActive = false;
+          if (currentRound >= totalRounds) {
+            triggerVictory();
+          } else {
+            currentRound++;
+            document.getElementById('hud-round').innerText = `${currentRound} / ${totalRounds}`;
+            spawnGateRound();
+          }
+        }, 900);
+      } else {
+        // Wrong gate: soft boing sound and gentle wobble, no penalty
+        playBoingSound();
+        const banner = document.getElementById('question-banner-box');
+        banner.classList.add('wobble-anim');
+        setTimeout(() => banner.classList.remove('wobble-anim'), 600);
+
+        // Respawn another chance
+        setTimeout(() => {
+          spawnGateRound();
+        }, 800);
+      }
+    }
+
+    function triggerVictory() {
+      gameState = 'VICTORY';
+      playFanfareSound();
+      document.getElementById('game-hud').classList.add('hidden');
+      document.getElementById('txt-final-score').innerText = translations[currentLang].finalScore + score;
+      document.getElementById('victory-modal').classList.remove('hidden');
+    }
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const delta = clock.getDelta();
+      const elapsedTime = clock.getElapsedTime();
+
+      // Smooth camera position
+      camera.position.x += (rocketGroup.position.x * 0.35 - camera.position.x) * 0.08;
+
+      // Rocket smooth lane interpolation
+      const lerpSpeed = warpSpeedActive ? 0.25 : 0.12;
+      rocketGroup.position.x += (targetRocketX - rocketGroup.position.x) * lerpSpeed;
+
+      // Subtle banked turns & floating bobbing
+      const tiltZ = (targetRocketX - rocketGroup.position.x) * -0.15;
+      rocketGroup.rotation.z += (tiltZ - rocketGroup.rotation.z) * 0.12;
+      rocketGroup.position.y = 0.4 + Math.sin(elapsedTime * 3.5) * 0.12;
+
+      // Thruster flame flicker
+      if (thrusterFlame) {
+        const flameScale = warpSpeedActive ? (1.8 + Math.random() * 0.4) : (1.0 + Math.sin(elapsedTime * 25) * 0.22);
+        thrusterFlame.scale.set(flameScale, flameScale, flameScale);
+        thrusterLight.intensity = warpSpeedActive ? 4.5 : (1.8 + Math.random() * 0.5);
+      }
+
+      // Rotate celestial diorama background planets
+      planetsList.forEach((planet, index) => {
+        planet.rotation.y += 0.003 * (index % 2 === 0 ? 1 : -1);
+      });
+
+      // Star particles fly-by effect
+      if (starParticles) {
+        const pos = starParticles.geometry.attributes.position.array;
+        const speed = warpSpeedActive ? 2.8 : 0.45;
+        for (let i = 2; i < pos.length; i += 3) {
+          pos[i] += speed;
+          if (pos[i] > 10) {
+            pos[i] = -110;
+          }
+        }
+        starParticles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Move gates towards player when PLAYING
+      if (gatesGroup && gameState === 'PLAYING') {
+        const curSpeed = warpSpeedActive ? gateSpeed * 2.2 : gateSpeed;
+        gatesGroup.children.forEach((singleGate) => {
+          singleGate.position.z += curSpeed;
+        });
+
+        // Gate passing check: When gates reach rocket Z plane (~0)
+        const frontGateZ = gatesGroup.children[0].position.z;
+        if (frontGateZ >= -0.3 && frontGateZ <= (0.3 + curSpeed)) {
+          // Evaluate lane
+          const chosenGate = gatesGroup.children[currentLaneIndex];
+          const isCorrect = chosenGate.userData.isCorrect;
+          onGateEvaluated(isCorrect);
+        }
+
+        // Remove gates when passed far behind
+        if (frontGateZ > 6) {
+          scene.remove(gatesGroup);
+          gatesGroup = null;
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.onload = function() {
+      initThree();
+      updateUITexts();
+      animate();
+    };
+  </script>
+</body>
+</html>
